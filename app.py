@@ -136,32 +136,7 @@ def get_folders(name):
         print('cannot do so')    
         return {'data':"undoable"}
 
-@app.route('/verify_sign_in_information/<name>/<lname>',methods=['GET'])
-def verify_sign_in_information(name,lname):
-    @after_this_request
-    def add_header(response):
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
-    data = db.child('Users/').get().val()
-    resp = '-'
-    if data:
-        for i in data:
-            if (data[i]['lastname']+data[i]['firstname']) == (lname+name):
-                resp = 'change either of the names to continue'
-                break
-            else:
-                resp = 'good to go!'
-        
-        return {
-      'data':resp,
-      'info':data
-    }
-    if not data:
-        return{
-            'data':'good to go!',
-            'info':data,
-            'status':200
-        }
+
 @app.route('/get_google_content/<query>',methods=['GET'])
 def get_google_content(query):
     @after_this_request
@@ -186,7 +161,7 @@ def add_youtube_content(name,foldername,sourcename,sourcepath):
     def add_header(response):
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
-    fd.collection(name).document(foldername).collection("content_stored").add({'link':'https:__www.youtube.com_watch?v='+sourcepath,'name':sourcename})
+    fd.collection(name).document(foldername).collection("content_stored").add({'link':'https:``www.youtube.com`watch?v='+sourcepath,'name':sourcename})
     
     return{"status":sourcepath}
 @app.route('/get_youtube_data/<query>',methods=['GET'])
@@ -356,6 +331,115 @@ def date_subtraction_for_paid_version(name):
     return {
         "data":int((subtracted_date).split(':')[0])
     }
+@app.route('/delete_folder/<name>/<foldername>',methods=['GET'])
+def delete_folder(name,foldername):
+   @after_this_request
+   def add_header(response):
+       response.headers.add('Access-Control-Allow-Origin', '*')
+       return response
+   d = fd.collection(name).document(foldername).delete()
+
+   return{
+       'status':200
+   }
+
+
+@app.route('/find_similarity_links/<arr1>/<arr2>', methods=['GET'])
+def find_similarity_links(arr1, arr2):
+    @after_this_request
+    def add_header(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+
+    disabled = []
+    i1 = 0
+    i2 = 0
+
+    if (len(arr1) >= len(arr2)):
+        arr1 = arr1.split(',')
+        arr2 = arr2.split(',')
+        print(list(arr1), list(arr2))
+
+        for i in arr1:
+            if i in arr2:
+                disabled.append(True)
+            else:
+                disabled.append(False)
+
+    return {
+        'data': disabled
+    }
+@app.route('/get_stored_links/<name>/<foldername>',methods=['GET'])
+def get_stored_links(name, foldername):
+   @after_this_request
+   def add_header(response):
+       response.headers.add('Access-Control-Allow-Origin', '*')
+       return response
+   stored_data = fd.collection(name).document(foldername).collection('content_stored').get()
+   stored_data = list(stored_data)
+   array = []
+   for _ in stored_data:
+       array.append(_.to_dict())
+   name_extracted = []
+   for _ in array:
+       name_extracted.append(_['link'])
+   print(name_extracted)
+   name_extracted_1 = []
+   for _ in name_extracted:
+       if _ == '`':
+           _ = '/'
+           print(_)
+       name_extracted_1.append(_)
+   print(type(name_extracted_1))
+   return {
+       'data':name_extracted_1
+   }
+
+
+@app.route('/verify_sign_in_information/<name>/<lname>', methods=['GET'])
+def verify_sign_in_information(name, lname):
+    @after_this_request
+    def add_header(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+
+    data = db.child('Users/').get().val()
+    resp = '-'
+    if data:
+        for i in data:
+            if (data[i]['lastname'] + data[i]['firstname']) == (lname + name):
+                resp = 'change either of the names to continue'
+                break
+            else:
+                resp = 'good to go!'
+
+        return {
+            'data': resp,
+            'info': data
+        }
+    if not data:
+        return {
+            'data': 'good to go!',
+            'info': data,
+            'status': 200
+        }
+
+@app.route('/get_last_name_and_email/<name>',methods=['GET'])
+def get_last_name_and_email(name):
+   @after_this_request
+   def add_header(response):
+       response.headers.add('Access-Control-Allow-Origin', '*')
+       return response
+   stored_data = db.child(f'Users/{name}/email').get().val()
+   stored_data1 = db.child(f"Users/{name}/lastname").get().val()
+   return {
+       'email':stored_data,
+       'lastname':stored_data1
+   }
+
+
+
+
 
 if __name__=='__main__':
     app.run(debug=True,host="localhost",port=8000)
