@@ -136,7 +136,32 @@ def get_folders(name):
         print('cannot do so')    
         return {'data':"undoable"}
 
-
+@app.route('/verify_sign_in_information/<name>/<lname>',methods=['GET'])
+def verify_sign_in_information(name,lname):
+    @after_this_request
+    def add_header(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+    data = db.child('Users/').get().val()
+    resp = '-'
+    if data:
+        for i in data:
+            if (data[i]['lastname']+data[i]['firstname']) == (lname+name):
+                resp = 'change either of the names to continue'
+                break
+            else:
+                resp = 'good to go!'
+        
+        return {
+      'data':resp,
+      'info':data
+    }
+    if not data:
+        return{
+            'data':'good to go!',
+            'info':data,
+            'status':200
+        }
 @app.route('/get_google_content/<query>',methods=['GET'])
 def get_google_content(query):
     @after_this_request
